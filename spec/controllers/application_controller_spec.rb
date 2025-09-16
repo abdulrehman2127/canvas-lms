@@ -391,7 +391,6 @@ RSpec.describe ApplicationController do
                               cache_key: "key",
                               uuid: "bleh",
                               salesforce_id: "blah",
-                              horizon_domain: nil,
                               suppress_assignments?: false,
                               enable_content_a11y_checker?: true)
         allow(root_account).to receive(:kill_joy?).and_return(false)
@@ -416,7 +415,6 @@ RSpec.describe ApplicationController do
                               cache_key: "key",
                               uuid: "blah",
                               salesforce_id: "bleh",
-                              horizon_domain: nil,
                               enable_content_a11y_checker?: false,
                               suppress_assignments?: false)
         allow(root_account).to receive(:kill_joy?).and_return(true)
@@ -2602,7 +2600,6 @@ RSpec.describe ApplicationController do
           global_id: "account_global1",
           lti_guid: "lti1",
           feature_enabled?: false,
-          horizon_domain: nil
         }
       end
 
@@ -3054,25 +3051,10 @@ RSpec.describe ApplicationController do
       end
     end
 
-    context "when feature flags are disabled" do
-      before do
-        @root_account.disable_feature!(:horizon_learner_app)
-        @root_account.disable_feature!(:horizon_learning_provider_app_on_contextless_routes)
-      end
-
-      let(:available_apps) { [CanvasCareer::Constants::App::CAREER_LEARNER] }
-
-      it "returns false even if resolver includes career apps" do
-        controller.instance_variable_set(:@current_user, user_factory)
-        expect(controller.show_career_switch?).to be false
-      end
-    end
-
     context "when available_apps has a career option" do
       let(:available_apps) { [CanvasCareer::Constants::App::CAREER_LEARNER] }
 
       it "returns true" do
-        @root_account.enable_feature!(:horizon_learner_app)
         controller.instance_variable_set(:@current_user, user_factory)
         expect(controller.show_career_switch?).to be true
       end
@@ -3082,7 +3064,6 @@ RSpec.describe ApplicationController do
       let(:available_apps) { [CanvasCareer::Constants::App::ACADEMIC] }
 
       it "returns false" do
-        @root_account.enable_feature!(:horizon_learner_app)
         controller.instance_variable_set(:@current_user, user_factory)
         expect(controller.show_career_switch?).to be false
       end

@@ -385,6 +385,10 @@ class ApplicationController < ActionController::Base
                                     elsif @context.is_a?(Course)
                                       @context.account.horizon_account?
                                     end
+        if @context.is_a?(Course)
+          @js_env[:FEATURES][:youtube_overlay] = @context.account.feature_enabled?(:youtube_overlay)
+        end
+
         # partner context data
         if @context&.grants_any_right?(@current_user, session, :read, :read_as_admin)
           @js_env[:current_context] = {
@@ -408,16 +412,8 @@ class ApplicationController < ActionController::Base
   def show_career_switch?
     return false unless @current_user
 
-    return false unless @domain_root_account&.feature_enabled?(:horizon_learner_app) ||
-                        @domain_root_account&.feature_enabled?(:horizon_learning_provider_app_on_contextless_routes)
-
-    career_apps = [
-      CanvasCareer::Constants::App::CAREER_LEARNER,
-      CanvasCareer::Constants::App::CAREER_LEARNING_PROVIDER
-    ]
-
     resolver = CanvasCareer::ExperienceResolver.new(@current_user, @context, @domain_root_account, session)
-    resolver.available_apps.intersect?(career_apps)
+    resolver.available_apps.intersect?(CanvasCareer::Constants::CAREER_APPS)
   end
   helper_method :show_career_switch?
 
@@ -467,7 +463,6 @@ class ApplicationController < ActionController::Base
     speedgrader_studio_media_capture
     student_access_token_management
     validate_call_to_action
-    youtube_overlay
   ].freeze
   JS_ENV_ROOT_ACCOUNT_FEATURES = %i[
     account_level_mastery_scales
@@ -485,8 +480,6 @@ class ApplicationController < ActionController::Base
     disable_iframe_sandbox_file_show
     extended_submission_state
     file_verifiers_for_quiz_links
-    horizon_learner_app
-    horizon_learning_provider_app_on_contextless_routes
     increased_top_nav_pane_size
     instui_nav
     login_registration_ui_identity
@@ -1105,7 +1098,6 @@ class ApplicationController < ActionController::Base
       # Allow iframing on all vanity domains as well as the canonical one
       unless @domain_root_account.nil?
         list.concat HostUrl.context_hosts(@domain_root_account, request.host)
-        list << @domain_root_account.horizon_domain if @domain_root_account.horizon_domain
       end
     end
   end

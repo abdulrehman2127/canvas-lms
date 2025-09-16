@@ -44,7 +44,7 @@ describe HorizonMode do
   end
 
   let(:resolver) { instance_double(CanvasCareer::ExperienceResolver) }
-  let(:config) { instance_double(CanvasCareer::Config, learner_app_redirect_url: "https://canvasforcareer.com") }
+  let(:config) { instance_double(CanvasCareer::Config) }
 
   before do
     # Define route for the anonymous controller
@@ -65,15 +65,6 @@ describe HorizonMode do
     context "when force_classic param is present" do
       it "does not redirect" do
         get :show, params: { force_classic: "1" }
-        expect(response).to have_http_status(:ok)
-      end
-    end
-
-    context "when force_classic cookie is present" do
-      before { cookies[:force_classic] = "1" }
-
-      it "does not redirect" do
-        get :show
         expect(response).to have_http_status(:ok)
       end
     end
@@ -124,34 +115,12 @@ describe HorizonMode do
         allow(resolver).to receive(:resolve).and_return(CanvasCareer::Constants::App::CAREER_LEARNER)
       end
 
-      context "when horizon_learner_app feature is enabled" do
-        before do
-          account.enable_feature!(:horizon_learner_app)
-        end
-
-        it "redirects to the career path without horizon parameters" do
-          get :show
-          expect(response.location).to include("/career/courses/#{course.id}")
-          expect(response.location).not_to include("content_only=true")
-          expect(response.location).not_to include("instui_theme=career")
-          expect(response.location).not_to include("force_classic=true")
-        end
-      end
-
-      context "when horizon_learner_app feature is disabled" do
-        it "redirects to the configured learner app URL with horizon parameters" do
-          get :show
-          expect(response.location).to include("https://canvasforcareer.com")
-          expect(response.location).to include("content_only=true")
-          expect(response.location).to include("instui_theme=career")
-          expect(response.location).to include("force_classic=true")
-        end
-
-        it "does nothing if course is not a horizon course" do
-          course.update!(horizon_course: false)
-          get :show
-          expect(response).to have_http_status(:ok)
-        end
+      it "redirects to the career path without horizon parameters" do
+        get :show
+        expect(response.location).to include("/career/courses/#{course.id}")
+        expect(response.location).not_to include("content_only=true")
+        expect(response.location).not_to include("instui_theme=career")
+        expect(response.location).not_to include("force_classic=true")
       end
     end
 
